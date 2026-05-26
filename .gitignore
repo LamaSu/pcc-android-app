@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 out/
+ota-out/
 *.tsbuildinfo
 
 # Capacitor — generated native projects (keep android/ committed, but ignore build artifacts)
