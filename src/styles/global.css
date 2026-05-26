@@ -1,12 +1,69 @@
+/* ---------------------------------------------------------------------------
+ * PCC Android shell global styles.
+ *
+ * Tokens here are kept in sync with src/design-tokens.ts. The TS module is
+ * the source of truth for components that need typed access; this stylesheet
+ * mirrors the same values as CSS custom properties so plain CSS can reference
+ * them too.
+ *
+ * Theme: "Space-Age Control Room" — ported from the @pcc/dashboard.
+ * --------------------------------------------------------------------------- */
+
 :root {
-  --bg: #0b0f17;
-  --bg-elev: #131a26;
-  --fg: #e6edf3;
+  /* Backgrounds */
+  --bg-900: #050a0e;
+  --bg-800: #090f15;
+  --bg-700: #0d1520;
+  --bg-600: #121c2a;
+
+  /* Primary (electric blue) */
+  --primary-700: #1a3a6c;
+  --primary-600: #2255a4;
+  --primary-500: #3b82f6;
+  --primary-400: #60a5fa;
+  --primary-300: #93c5fd;
+
+  /* Accents */
+  --cyan-500: #00a8cc;
+  --cyan-400: #00d4ff;
+  --gold-400: #ffaa00;
+
+  /* Foreground */
+  --fg: #f0f4f0;
   --fg-muted: #8b949e;
-  --accent: #6ee7b7;
-  --border: #22293a;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --fg-dim: #566370;
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-hover: rgba(255, 255, 255, 0.08);
+
+  /* Status palette */
+  --status-online: #60a5fa;
+  --status-executing: #ffaa00;
+  --status-completed: #3b82f6;
+  --status-failed: #ff4444;
+  --status-offline: #4a5568;
+
+  /* Radii + spacing */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --pad-card: 16px;
+
+  /* Type */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas,
+    monospace;
+  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Tab bar height (used by route layout + scroll padding) */
+  --tab-bar-h: 64px;
+
   color-scheme: dark;
+  font-family: var(--font-sans);
 }
 
 * {
@@ -17,7 +74,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: var(--bg-900);
   color: var(--fg);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -27,47 +84,59 @@ body {
 #root {
   min-height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
 }
 
+/* Mobile-first: app stretches edge-to-edge; cards constrain themselves */
 .app {
   width: 100%;
-  max-width: 480px;
-  padding: env(safe-area-inset-top, 24px) 20px env(safe-area-inset-bottom, 24px);
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  padding-top: env(safe-area-inset-top, 0);
+  /* Reserve room for the bottom tab bar + safe area */
+  padding-bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom, 0));
 }
 
-.hero {
-  padding: 32px 0 8px;
-  text-align: center;
+.page {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.hero h1 {
+.page-header {
+  padding: 8px 0 4px;
+}
+
+.page-header h1 {
   margin: 0;
-  font-size: 56px;
-  font-weight: 700;
-  letter-spacing: -2px;
-  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--primary-400);
 }
 
-.tagline {
+.page-header p {
   margin: 4px 0 0;
   color: var(--fg-muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
+/* Cards ------------------------------------------------------------------- */
+
 .card {
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 20px;
+  background: var(--bg-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: var(--pad-card);
 }
 
 .card h2 {
   margin: 0 0 8px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -75,20 +144,206 @@ body {
   margin: 0 0 12px;
   color: var(--fg-muted);
   line-height: 1.5;
+  font-size: 14px;
 }
+
+.card.glass {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+.card.tappable {
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease, border-color 120ms ease;
+}
+
+.card.tappable:active {
+  transform: scale(0.985);
+  background: var(--glass-hover);
+  border-color: var(--primary-400);
+}
+
+/* Buttons / CTAs ---------------------------------------------------------- */
 
 .cta {
   display: inline-block;
-  padding: 10px 16px;
-  background: var(--accent);
-  color: #0b0f17;
+  padding: 12px 18px;
+  background: var(--primary-500);
+  color: var(--bg-900);
   font-weight: 600;
   text-decoration: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .cta:hover {
   filter: brightness(1.05);
+}
+
+.cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cta.secondary {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--fg);
+}
+
+/* Bottom tab bar (mobile-first nav) -------------------------------------- */
+
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--tab-bar-h) + env(safe-area-inset-bottom, 0));
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: var(--bg-800);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  z-index: 50;
+}
+
+.tab-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 4px;
+  min-height: 56px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tab-link.active {
+  color: var(--primary-400);
+}
+
+.tab-link .tab-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* Status badges ----------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid currentColor;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Loading / empty / error states ----------------------------------------- */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-700) 0%,
+    var(--glass-hover) 50%,
+    var(--bg-700) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+  border-radius: var(--r-md);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+.error-state {
+  padding: 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--status-failed);
+  background: rgba(255, 68, 68, 0.06);
+  color: var(--status-failed);
+  font-size: 13px;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.note code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Inputs ------------------------------------------------------------------ */
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-900);
+  border: 1px solid var(--glass-border);
+  color: var(--fg);
+  font-size: 14px;
+  border-radius: var(--r-md);
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-400);
+}
+
+/* Pull-to-refresh indicator (used by Capabilities screen) ----------------- */
+
+.pull-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: var(--primary-400);
+  font-size: 12px;
+  font-family: var(--font-mono);
 }
 
 .ota-status {
@@ -97,27 +352,14 @@ body {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   font-size: 12px;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  color: var(--accent);
+  font-family: var(--font-mono);
+  color: var(--cyan-400);
   overflow-x: auto;
-}
-
-.note {
-  margin: 12px 0 0;
-  font-size: 12px;
-}
-
-.note code {
-  background: rgba(255, 255, 255, 0.06);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
 }
 
 .footer {
   margin-top: auto;
-  padding-top: 16px;
+  padding: 16px;
   text-align: center;
   color: var(--fg-muted);
 }
@@ -127,14 +369,45 @@ body {
   text-decoration: underline;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f8fa;
-    --bg-elev: #ffffff;
-    --fg: #1f2328;
-    --fg-muted: #57606a;
-    --accent: #0d8264;
-    --border: #d0d7de;
-    color-scheme: light;
-  }
+/* Capability card list (used in /capabilities) --------------------------- */
+
+.cap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cap-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cap-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+  flex: 1;
+}
+
+.cap-card-kernel {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin: 0 0 8px;
+}
+
+.cap-card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+}
+
+.cap-card-meta strong {
+  color: var(--fg);
+  font-weight: 500;
 }
