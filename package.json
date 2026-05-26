@@ -1,0 +1,43 @@
+{
+  "name": "@lamasu/pcc-android-app",
+  "version": "0.1.0",
+  "description": "PCC physical capability cloud as an Android app — Capacitor 7 wrap of the dashboard with OTA auto-updates via @capgo/capacitor-updater.",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LamaSu/pcc-android-app.git"
+  },
+  "homepage": "https://capability.network",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "cap:sync": "cap sync",
+    "cap:open:android": "cap open android",
+    "cap:run:android": "cap run android",
+    "cap:doctor": "cap doctor",
+    "ota:bundle": "node scripts/ota-bundle.mjs",
+    "ota:sign": "node scripts/ota-sign.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capgo/capacitor-updater": "^7.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

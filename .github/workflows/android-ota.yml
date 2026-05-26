@@ -1,0 +1,166 @@
+name: android-ota
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      build_native:
+        description: 'Also build .aab and upload to Play Internal track'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: android-ota-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish-bundle:
+    name: Build + sign + publish OTA bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build web bundle
+        run: pnpm build
+        env:
+          VITE_OTA_MANIFEST_URL: ${{ vars.VITE_OTA_MANIFEST_URL || 'https://capability.network/android-ota/manifest.json' }}
+          VITE_OTA_PUBLIC_KEY: ${{ vars.VITE_OTA_PUBLIC_KEY }}
+
+      - name: Pack OTA bundle (compute manifest entry)
+        run: pnpm ota:bundle
+
+      - name: Zip dist/ into the bundle archive
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          (cd dist && zip -r "../ota-out/${VERSION}.zip" .)
+          ls -la ota-out/
+
+      - name: Sign manifest entry
+        if: env.OTA_PRIVATE_KEY_PEM != ''
+        env:
+          OTA_PRIVATE_KEY_PEM: ${{ secrets.OTA_PRIVATE_KEY_PEM }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          node scripts/ota-sign.mjs "ota-out/${VERSION}.manifest.json"
+
+      # ----- TODO Phase 2: actually publish to a CDN -----
+      # Pick one path and uncomment:
+      #
+      # OPTION 1: Cloudflare R2 via wrangler
+      #   - name: Install wrangler
+      #     run: npm install -g wrangler
+      #   - name: Upload to R2
+      #     env:
+      #       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     run: |
+      #       VERSION=$(node -p "require('./package.json').version")
+      #       wrangler r2 object put pcc-android-ota/bundles/${VERSION}.zip --file ota-out/${VERSION}.zip
+      #       wrangler r2 object put pcc-android-ota/manifest.json --file ota-out/${VERSION}.manifest.json
+      #
+      # OPTION 2: AWS S3
+      #   - uses: aws-actions/configure-aws-credentials@v4
+      #   - run: aws s3 cp ota-out/ s3://pcc-android-ota/ --recursive
+      #
+      # OPTION 3: Storacha (matches PCC evidence stack)
+      #   - run: npx storacha upload ota-out/${VERSION}.zip
+      # ---------------------------------------------------
+
+      - name: Upload OTA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ota-bundle-${{ github.sha }}
+          path: ota-out/
+          retention-days: 30
+
+  build-native-aab:
+    name: Build Android .aab + upload to Play Internal
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_native == 'true' }}
+    needs: build-and-publish-bundle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----- Phase 2 TODO -----
+      # The steps below are commented stubs. They become live once we:
+      #   1. Provision a Play Console developer account
+      #   2. Create the keystore + upload Play app signing key
+      #   3. Wire Fastlane credentials (service-account JSON) into GH Secrets
+      #
+      # - uses: actions/setup-java@v4
+      #   with:
+      #     distribution: temurin
+      #     java-version: '21'
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
+      # - uses: pnpm/action-setup@v4
+      #   with:
+      #     version: 9
+      # - run: pnpm install --frozen-lockfile
+      # - run: pnpm build
+      # - run: pnpm cap:sync
+      # - name: Decode keystore
+      #   run: |
+      #     echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > android/app/release.keystore
+      # - name: Build .aab
+      #   working-directory: android
+      #   env:
+      #     ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      #     ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      #     ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      #   run: ./gradlew bundleRelease
+      # - uses: ruby/setup-ruby@v1
+      #   with:
+      #     ruby-version: '3.3'
+      #     bundler-cache: true
+      # - name: fastlane supply --track internal
+      #   env:
+      #     SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      #   run: |
+      #     bundle exec fastlane supply --track internal \
+      #       --aab android/app/build/outputs/bundle/release/app-release.aab \
+      #       --package_name network.capability.pcc
+      # ------------------------
+
+      - name: Phase 2 notice
+        run: |
+          echo "::notice::Native .aab build is stubbed for Phase 1."
+          echo "::notice::See .github/workflows/android-ota.yml for the activation checklist."
